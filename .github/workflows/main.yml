@@ -1,0 +1,53 @@
+name: Build, Archive, and Release Source Code
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Setup build environment
+        run: |
+          sudo apt-get update && sudo apt-get install -y build-essential cmake
+
+      
+
+      - name: Create ZIP archive
+        run: |
+          zip -r my-project.zip ./build
+
+      - name: Create tar.gz archive
+        run: |
+          tar -czvf my-project.tar.gz ./build
+
+      - name: Create release assets
+        id: create_release_assets
+        uses: actions/upload-artifact@v3
+        with:
+          name: release-assets
+          path: |
+            my-project.zip
+            my-project.tar.gz
+
+      - name: Create release
+        uses: actions/create-release@v3
+        id: create_release
+        with:
+          tag_name: ${{ github.event.ref.name }}
+          release_name: ${{ github.event.ref.name }}
+          body: |
+            Built and released ${{ github.event.ref.name }}
+
+      - name: Publish release assets
+        uses: actions/upload-release-asset@v3
+        with:
+          release_id: ${{ steps.create_release.outputs.id }}
+          assets: |
+            release-assets/my-project.zip
+            release-assets/my-project.tar.gz
